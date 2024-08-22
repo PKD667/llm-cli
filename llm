@@ -1,0 +1,77 @@
+#!/bin/bash
+
+
+backend_dir="$prefix/lib/llm/"
+
+function backend_list() {
+    # search for all files in $backend_dir and put them into a bash array
+    backends=($(ls $backend_dir))
+    echo "$backends"
+}
+
+function backend_select() {
+    if [ -z "$1" ]; then
+        echo "Usage: backend select <backend>"
+        return
+    fi
+
+    # check if backend exists
+    if [ ! -f "$backend_dir/$1" ]; then
+        echo "Backend $1 does not exist"
+        return
+    fi
+
+    # link the backend to the default file
+    ln -s "$backend_dir/$1" "$backend_dir/default"
+
+}
+
+
+function backend() {
+    if [ -z "$1" ]; then
+        echo "Usage: backend <command>"
+        return
+    fi
+
+    # if $1 is list then list all backends
+    if [ "$1" == "list" ]; then
+        backend_list
+    elif [ "$1" == "select" ]; then
+        echo "Selecting backend $2"
+        backend_select "$2"
+    else
+        echo "Usage: backend <command>"
+    fi
+
+
+}
+
+function call() {
+
+    # if not default in backend then ask for backend
+    # Ask user to run llm backend select <backend>
+    if [ ! -f "$backend_dir/default" ]; then
+        echo "No default backend selected. Please run llm backend select <backend>"
+        echo $(backend_list)
+        return
+    fi
+
+    # if default backend is set then run the command
+    #echo "$backend_dir/default $1 $2"
+    $backend_dir/default "$1" "$2"
+
+    return
+
+}
+
+
+if [ -z "$1" ]; then
+    echo "Usage: llm <command>"
+    return
+fi
+
+if [ "$1" == "backend" ]; then
+    backend ${@:2}
+else
+    call "$1" "$2"
+fi
